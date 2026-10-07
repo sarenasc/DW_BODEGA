@@ -1,0 +1,22 @@
+# MODO DEMO: levanta el sistema completo con datos ficticios, sin infraestructura externa.
+#   docker compose up -d      ->  http://localhost:8080   (usuario admin, clave Demo1234)
+services:
+  backend:
+    build: ./backend
+    environment:
+      WMS_MODO_DEMO: "1"
+      WMS_URL_PUBLICA: ${WMS_URL_PUBLICA:-http://localhost:8080}
+    volumes:
+      - datos_demo:/datos
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "${WMS_PUERTO:-8080}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  datos_demo:

@@ -1,0 +1,12 @@
+{
+  "name": "WMS Bodegas",
+  "short_name": "WMS",
+  "description": "Gestión de bodegas, inventario y consumo rápido con QR",
+  "start_url": "/consumo/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#111c2e",
+  "theme_color": "#111c2e",
+  "icons": [{ "src": "/icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

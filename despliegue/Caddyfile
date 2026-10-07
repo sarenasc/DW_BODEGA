@@ -1,0 +1,7 @@
+# Con un dominio publico, Caddy obtiene el certificado automaticamente.
+# En red interna sin dominio publico agregue dentro del bloque la linea:  tls internal
+# y confie la autoridad certificadora de Caddy en los equipos y telefonos.
+{$WMS_DOMINIO} {
+	encode gzip
+	reverse_proxy frontend:80
+}

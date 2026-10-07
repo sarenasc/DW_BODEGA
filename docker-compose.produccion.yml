@@ -1,0 +1,63 @@
+# PRODUCCION (ejemplo con PostgreSQL). Requiere un archivo .env (ver .env.example).
+#   docker compose -f docker-compose.produccion.yml up -d
+# Al abrir el sistema por primera vez aparece el asistente de instalacion: elija PostgreSQL,
+# servidor "bd", puerto 5432 y las credenciales definidas en .env.
+# Para SQL Server o MySQL externos, elimine el servicio "bd" e indique su servidor en el asistente
+# (SQL Server: defina CON_SQLSERVER=1 en .env para incluir el controlador ODBC).
+services:
+  bd:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${BD_USUARIO:?defina BD_USUARIO}
+      POSTGRES_PASSWORD: ${BD_CLAVE:?defina BD_CLAVE}
+      POSTGRES_DB: ${BD_NOMBRE:-wms}
+    volumes:
+      - datos_bd:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${BD_USUARIO}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+      args:
+        CON_SQLSERVER: ${CON_SQLSERVER:-0}
+    environment:
+      WMS_CLAVE_SECRETA: ${WMS_CLAVE_SECRETA:?defina WMS_CLAVE_SECRETA}
+      WMS_COOKIE_SEGURA: ${WMS_COOKIE_SEGURA:-1}
+      WMS_URL_PUBLICA: ${WMS_URL_PUBLICA:?defina WMS_URL_PUBLICA}
+    volumes:
+      - instancia:/datos
+    depends_on:
+      bd:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  # HTTPS automatico. La camara del telefono solo funciona sobre HTTPS.
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      WMS_DOMINIO: ${WMS_DOMINIO:?defina WMS_DOMINIO}
+    volumes:
+      - ./despliegue/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_datos:/data
+    depends_on:
+      - frontend
+    restart: unless-stopped
+
+volumes:
+  datos_bd:
+  instancia:
+  caddy_datos:
