@@ -119,3 +119,24 @@ Probado con 12 hilos sobre una existencia de 20 L (solo 6 consumos de 3 L pasan)
 | Inventario físico | Conteo por bodega o ubicación con escaneo; los ajustes se generan solo tras la autorización |
 
 Stock negativo: no permitido ni configurable en esta versión.
+
+## Tipos de rebaja
+
+Configurables en *Configuración → Tipos de ingreso y salida*. Iniciales: consumo en proceso, despacho, guía interna, consumo interno,
+merma, baja por vencimiento, préstamo y **aseo / lavado de línea**. Cada uno indica si exige proceso o documento.
+El aseo de línea no exige proceso: su costo aparece en consumos y reportes, pero no se carga a ningún proceso ni altera la receta por especie.
+Si se quiere cargar a un proceso, basta tener ese proceso seleccionado al registrar la rebaja.
+
+## Proyección de insumos
+
+*Producción → Proyección de insumos.* Responde: *con lo que queda por procesar, ¿cuánta receta falta y me alcanza el stock?*
+
+1. **Historial por especie**: para cada especie, kilos procesados, número de procesos y gasto por kilo (por defecto solo procesos cerrados;
+   se puede acotar por fechas, temporada y familia, o incluir los abiertos).
+2. **Kilos pendientes**: se digitan por especie.
+3. **Receta**: para cada producto, `consumo por kilo = cantidad consumida en los procesos de la especie ÷ kilos de todos esos procesos`
+   (incluye los procesos que no usaron el producto: es el uso promedio real). `Receta = consumo por kilo × kilos pendientes`, sumada entre especies.
+4. **Stock**: se compara con el disponible (físico − reservado), de todas las bodegas o de una; se informa cobertura y cuánto falta comprar.
+5. **Costo estimado**: con el costo histórico promedio del producto en esos consumos (referencial).
+
+Es una estimación sobre el promedio histórico: no reserva ni descuenta nada. Los kilos usan la base de costeo configurada.

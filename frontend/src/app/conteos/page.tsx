@@ -36,7 +36,9 @@ export default function Conteos() {
               { clave: "ubicacion", titulo: "Ubicación", render: (c) => c.ubicacion ?? "Toda la bodega" },
               { clave: "avance", titulo: "Avance", alinear: "derecha", render: (c) => `${c.contadas} / ${c.lineas}` },
               { clave: "con_diferencia", titulo: "Con diferencia", alinear: "derecha", render: (c) => (c.con_diferencia ? <b className="text-rose-700">{c.con_diferencia}</b> : "0") },
-              { clave: "usuario", titulo: "Usuario", ocultarMovil: true },
+              { clave: "usuario", titulo: "Creado por", render: (c) => <>{c.usuario ?? "—"}<span className="block text-xs text-slate-500">{c.usuario_roles}</span></> },
+              { clave: "contado_por_nombres", titulo: "Contado por", ocultarMovil: true, render: (c) => c.contado_por_nombres.join(", ") || "—" },
+              { clave: "autorizado_por_nombre", titulo: "Autorizado por", ocultarMovil: true, render: (c) => (c.autorizado_por_nombre ? <>{c.autorizado_por_nombre}<span className="block text-xs text-slate-500">{c.autorizado_por_roles}</span></> : "—") },
               { clave: "estado", titulo: "Estado", render: (c) => <Estado valor={c.estado} /> },
             ]}
           />

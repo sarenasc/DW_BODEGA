@@ -2,7 +2,7 @@
 
 Revision ID: 0001
 Revises: 
-Create Date: 2026-10-06 18:43:52.551426
+Create Date: 2026-10-06 23:13:06.609185
 """
 from alembic import op
 import sqlalchemy as sa
@@ -440,6 +440,7 @@ def upgrade() -> None:
     sa.Column('codigo_completo', sa.String(length=80), nullable=False),
     sa.Column('nombre', sa.String(length=100), nullable=True),
     sa.Column('capacidad', sa.Numeric(precision=18, scale=6), nullable=True),
+    sa.Column('capacidad_bultos', sa.Integer(), nullable=True),
     sa.Column('almacenable', sa.Boolean(), nullable=False),
     sa.Column('activo', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -1041,7 +1042,9 @@ def upgrade() -> None:
     sa.Column('movimiento_ajuste_id', sa.Integer(), nullable=True),
     sa.Column('observacion', sa.String(length=300), nullable=True),
     sa.Column('contado_en', sa.DateTime(), nullable=True),
+    sa.Column('contado_por', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.ForeignKeyConstraint(['contado_por'], ['usuarios.id'], name=op.f('fk_detalles_conteos_inventario_contado_por_usuarios')),
     sa.ForeignKeyConstraint(['conteo_id'], ['conteos_inventario.id'], name=op.f('fk_detalles_conteos_inventario_conteo_id_conteos_inventario'), ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['existencia_id'], ['existencias.id'], name=op.f('fk_detalles_conteos_inventario_existencia_id_existencias')),
     sa.ForeignKeyConstraint(['movimiento_ajuste_id'], ['movimientos_inventario.id'], name=op.f('fk_detalles_conteos_inventario_movimiento_ajuste_id_movimientos_inventario')),

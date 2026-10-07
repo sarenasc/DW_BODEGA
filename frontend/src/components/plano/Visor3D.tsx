@@ -98,7 +98,7 @@ function Area({ el, ocupacion, modo, maxValor, onUbicacion, seleccion }: { el: E
   // Bultos sobre el piso: una pila por cada existencia (hasta llenar el area).
   const columnas = Math.max(1, Math.floor(w / 1.3));
   const filas = Math.max(1, Math.floor(d / 1.3));
-  const pilas = Math.min(o?.existencias ?? 0, columnas * filas);
+  const pilas = Math.min(o?.bultos ?? o?.existencias ?? 0, columnas * filas);  // un bulto dibujado por envase almacenado
   return (
     <group position={[el.x, 0, el.y]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[w / 2, 0.02, d / 2]} onClick={(e) => { e.stopPropagation(); if (el.ubicacion_id) onUbicacion(el.ubicacion_id); }}>

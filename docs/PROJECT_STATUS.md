@@ -31,6 +31,15 @@ Fase 8 concluida. Siguiente etapa: validación en ambiente de prueba.
 Cambio de orden respecto al plan: el backend de todas las fases se construyó y probó antes que el frontend, porque el modelo de datos
 se diseñó completo de una vez y así cada pantalla se escribió contra una API ya verificada.
 
+## Agregado después de la versión 1.0.0-rc1
+
+| Función | Est. | Evidencia |
+|---|---|---|
+| Proyección de insumos por especie (receta pendiente vs. stock) | C | 3 pruebas; verificada en navegador con el Demo |
+| Rebaja por aseo / lavado de línea | C | 1 prueba; visible en el Demo |
+
+Con esto la suite del backend tiene **114 pruebas** y el frontend **37 pantallas**. Estos cambios están sin confirmar en git.
+
 ## Auditoría final: requerimientos vs. implementación
 
 Clasificación: **C** completo · **P** parcial · **N** no implementado · **V** requiere validación en hardware o entorno real.

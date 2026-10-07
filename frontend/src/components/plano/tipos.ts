@@ -15,7 +15,7 @@ export type Elemento = {
 };
 
 export type UbicacionPlano = { id: number; padre_id: number | null; tipo: string; codigo: string; orden: number; codigo_completo: string; almacenable: boolean; capacidad: number | null };
-export type Ocupacion = { ubicacion_id: number; existencias: number; cantidad: number; valor: number | null; dias_antiguedad: number | null; dias_para_vencer: number | null; ocupacion: number | null };
+export type Ocupacion = { ubicacion_id: number; existencias: number; bultos?: number; cantidad: number; valor: number | null; dias_antiguedad: number | null; dias_para_vencer: number | null; ocupacion: number | null };
 export type Modo = "ocupacion" | "antiguedad" | "vencimiento" | "valor";
 
 export const COLOR_TIPO: Record<Elemento["tipo"], string> = { RACK: "#475569", ZONA: "#f59e0b", PISO: "#38bdf8", PASILLO: "#cbd5e1", OBSTACULO: "#64748b" };

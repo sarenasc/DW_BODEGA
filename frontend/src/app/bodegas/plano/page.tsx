@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ContenidoUbicacion } from "@/components/ContenidoUbicacion";
 import { Editor2D } from "@/components/plano/Editor2D";
-import { COLOR_TIPO, type Elemento, LEYENDAS, type Modo, NOMBRE_TIPO, type Ocupacion } from "@/components/plano/tipos";
+import { celdasRack, COLOR_TIPO, colorOcupacion, type Elemento, LEYENDAS, type Modo, NOMBRE_TIPO, type Ocupacion } from "@/components/plano/tipos";
 import { Aviso, Boton, Campo, Cargando, cx, Encabezado, EnlaceBoton, Entrada, Pestanas, Selector, Tarjeta, useAccion } from "@/components/ui";
 import { api } from "@/lib/api";
 import { useDatos, useParametro, useSesion } from "@/lib/sesion";
@@ -182,7 +182,7 @@ export default function Plano() {
                 onSeleccion={(c) => {
                   setSeleccion(c);
                   const el = elementos.find((e) => e.clave === c);
-                  if (!editable && el?.ubicacion_id) verUbicacion(el.ubicacion_id);
+                  if (el?.ubicacion_id) verUbicacion(el.ubicacion_id);
                 }}
                 onMover={(clave, x, y, fin) => {
                   const el = elementos.find((e) => e.clave === clave);
@@ -264,8 +264,33 @@ export default function Plano() {
               )}
             </Tarjeta>
           )}
+          {sel?.tipo === "RACK" && sel.ubicacion_id && (
+            <Tarjeta titulo={`Posiciones de ${sel.nombre}`}>
+              {/* Vista frontal del rack: el nivel mas alto arriba. Cada casilla es una ubicacion donde se puede guardar. */}
+              <div className="space-y-1">
+                {Array.from({ length: sel.parametros?.niveles ?? 1 }, (_, i) => (sel.parametros?.niveles ?? 1) - 1 - i).map((nivel) => (
+                  <div key={nivel} className="flex items-center gap-1">
+                    <span className="w-7 shrink-0 text-[10px] font-semibold text-slate-500">N{String(nivel + 1).padStart(2, "0")}</span>
+                    {celdasRack(sel, ubicaciones).filter((c) => c.nivel === nivel).map((c) => (
+                      <button
+                        key={c.posicion}
+                        disabled={!c.ubicacion}
+                        onClick={() => c.ubicacion && verUbicacion(c.ubicacion.id)}
+                        title={c.ubicacion?.codigo_completo}
+                        className={cx("h-9 min-w-0 flex-1 rounded border text-[10px] font-semibold text-slate-800 transition hover:ring-2 hover:ring-marca-500", c.ubicacion && contenido?.ubicacion.id === c.ubicacion.id ? "border-marca-600 ring-2 ring-marca-500" : "border-slate-300")}
+                        style={{ background: colorOcupacion(c.ubicacion ? ocupacion.get(c.ubicacion.id) : undefined, modo, maxValor) }}
+                      >
+                        P{String(c.posicion + 1).padStart(2, "0")}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-slate-500">Haga clic en una posición para ver su contenido o guardar un producto.</p>
+            </Tarjeta>
+          )}
           <Tarjeta titulo={contenido ? contenido.ubicacion.codigo_completo : "Contenido de la ubicación"}>
-            {contenido ? <ContenidoUbicacion datos={contenido} /> : <p className="text-sm text-slate-500">Haga clic en una posición, rack o área para ver productos, lotes, cantidad, vencimiento, valor y capacidad disponible.</p>}
+            {contenido ? <ContenidoUbicacion datos={contenido} onCambio={() => { verUbicacion(contenido.ubicacion.id); oc.recargar(); }} /> : <p className="text-sm text-slate-500">Haga clic en una posición o área para ver su contenido y guardar productos en ella.</p>}
           </Tarjeta>
         </div>
       </div>

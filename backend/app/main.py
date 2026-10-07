@@ -17,7 +17,7 @@ log = logging.getLogger("wms")
 
 MODULOS = [
     "instalacion", "auth", "usuarios", "maestros", "bodegas", "lotes", "inventario", "consumo", "reservas",
-    "procesos", "integraciones", "alertas", "dashboard", "reportes", "trazabilidad", "operaciones", "adjuntos",
+    "procesos", "proyeccion", "integraciones", "alertas", "dashboard", "reportes", "trazabilidad", "operaciones", "adjuntos",
 ]
 
 

@@ -190,7 +190,7 @@ Indices: (usuario_id)
 | `motivo` | String(500) | si |  |
 | `id` **PK** | Integer | no |  |
 
-Indices: (usuario_id); (empresa_id); (entidad_id); (entidad); (fecha)
+Indices: (empresa_id); (entidad); (usuario_id); (fecha); (entidad_id)
 
 #### `configuraciones`
 
@@ -403,7 +403,7 @@ Unicos: (familia_id, clave)
 
 Unicos: (empresa_id, codigo)
 
-Indices: (nombre); (subfamilia_id); (codigo_barras)
+Indices: (subfamilia_id); (codigo_barras); (nombre)
 
 #### `proveedores`
 
@@ -464,6 +464,7 @@ Unicos: (empresa_id, codigo)
 | `codigo_completo` | String(80) | no |  |
 | `nombre` | String(100) | si |  |
 | `capacidad` | Numeric(18, 6) | si |  |
+| `capacidad_bultos` | Integer | si |  |
 | `almacenable` | Boolean | no |  |
 | `activo` | Boolean | no |  |
 | `id` **PK** | Integer | no |  |
@@ -472,7 +473,7 @@ Unicos: (empresa_id, codigo)
 
 Unicos: (bodega_id, codigo_completo)
 
-Indices: (bodega_id); (codigo_completo); (padre_id)
+Indices: (bodega_id); (padre_id); (codigo_completo)
 
 #### `elementos_plano`
 
@@ -621,7 +622,7 @@ Unicos: (plantilla_id, clave_alcance)
 
 Unicos: (empresa_id, codigo)
 
-Indices: (codigo); (fecha_vencimiento); (lote_padre_id); (estado); (producto_id)
+Indices: (producto_id); (codigo); (fecha_vencimiento); (lote_padre_id); (estado)
 
 #### `historial_estados_lotes`
 
@@ -672,7 +673,7 @@ Indices: (lote_id)
 
 Unicos: (empresa_id, numero)
 
-Indices: (fecha); (estado); (clase); (numero_documento); (bodega_id)
+Indices: (numero_documento); (fecha); (bodega_id); (estado); (clase)
 
 #### `detalles_documentos_inventario`
 
@@ -736,9 +737,9 @@ Indices: (documento_id)
 
 Unicos: (token_qr); (codigo_publico); (codigo_publico); (token_qr)
 
-Restricciones: `cantidad_inicial > 0`; `cantidad_fisica >= 0`; `costo_unitario >= 0`
+Restricciones: `cantidad_fisica >= 0`; `cantidad_inicial > 0`; `costo_unitario >= 0`
 
-Indices: (lote_id); (producto_id, bodega_id, estado, fecha_ingreso); (ubicacion_id); (existencia_padre_id)
+Indices: (lote_id); (existencia_padre_id); (ubicacion_id); (producto_id, bodega_id, estado, fecha_ingreso)
 
 #### `movimientos_inventario`
 
@@ -775,7 +776,7 @@ Indices: (lote_id); (producto_id, bodega_id, estado, fecha_ingreso); (ubicacion_
 
 Unicos: (movimiento_anulado_id); (clave_idempotencia)
 
-Indices: (documento_id); (proceso_id); (bodega_origen_id); (existencia_id); (fecha); (producto_id, fecha); (lote_id); (bodega_destino_id)
+Indices: (documento_id); (proceso_id); (bodega_origen_id); (lote_id); (producto_id, fecha); (existencia_id); (fecha); (bodega_destino_id)
 
 #### `excepciones_fifo`
 
@@ -824,7 +825,7 @@ Unicos: (empresa_id, numero)
 
 Restricciones: `cantidad_consumida >= 0`; `cantidad > 0`
 
-Indices: (producto_id); (estado); (proceso_id)
+Indices: (proceso_id); (producto_id); (estado)
 
 #### `conteos_inventario`
 
@@ -859,6 +860,7 @@ Unicos: (empresa_id, numero)
 | `movimiento_ajuste_id` | Integer | si | `movimientos_inventario.id` |
 | `observacion` | String(300) | si |  |
 | `contado_en` | DateTime | si |  |
+| `contado_por` | Integer | si | `usuarios.id` |
 | `id` **PK** | Integer | no |  |
 
 Unicos: (conteo_id, existencia_id)
@@ -947,7 +949,7 @@ Unicos: (empresa_id, numero)
 | `creado_en` | DateTime | no |  |
 | `actualizado_en` | DateTime | no |  |
 
-Unicos: (fuente_id, id_externo); (empresa_id, codigo)
+Unicos: (empresa_id, codigo); (fuente_id, id_externo)
 
 Indices: (estado); (exportadora); (especie); (temporada_id); (productor); (codigo); (fecha)
 
@@ -1091,4 +1093,4 @@ Unicos: (empresa_id, tipo)
 | `notificada` | Boolean | no |  |
 | `id` **PK** | Integer | no |  |
 
-Indices: (tipo); (clave); (estado); (empresa_id); (fecha_creacion)
+Indices: (estado); (empresa_id); (fecha_creacion); (tipo); (clave)

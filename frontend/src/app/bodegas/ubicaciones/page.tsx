@@ -138,7 +138,7 @@ export default function Ubicaciones() {
       </Modal>
 
       <Modal abierto={!!contenido} titulo={contenido?.ubicacion.codigo_completo} onCerrar={() => setContenido(null)}>
-        {contenido && <ContenidoUbicacion datos={contenido} />}
+        {contenido && <ContenidoUbicacion datos={contenido} onCambio={() => api.get(`/ubicaciones/${contenido.ubicacion.id}/contenido`).then(setContenido)} />}
       </Modal>
     </>
   );

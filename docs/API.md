@@ -18,7 +18,7 @@
 - **Advertencia FIFO:** un consumo fuera de orden responde 409 `FIFO_ADVERTENCIA` con la existencia recomendada en `datos`;
   se reenvia con `confirmar_fifo: true` (o `justificacion`, segun la politica).
 
-## Operaciones (198)
+## Operaciones (200)
 
 
 ### Adjuntos
@@ -257,6 +257,13 @@
 | `POST` | `/api/procesos/{id_}/cerrar` | Cerrar |
 | `GET` | `/api/procesos/{id_}/consumos` | Consumos asociados al proceso, con existencia QR, lote, costo, usuario, bodega y ubicacion. |
 | `POST` | `/api/procesos/{id_}/reabrir` | Reabrir |
+
+### Proyeccion de insumos
+
+| Metodo | Ruta | Descripcion |
+|---|---|---|
+| `POST` | `/api/proyeccion` | Receta que falta por aplicar: kilos pendientes por especie x consumo historico por kilo, comparada con el stock disponible. |
+| `GET` | `/api/proyeccion/historial` | Base del calculo: por especie, kilos procesados, cantidad de procesos y gasto historico por kilo. |
 
 ### Reportes
 

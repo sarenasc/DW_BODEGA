@@ -32,6 +32,7 @@ MOTIVOS = [
     ("SALIDA", "DESPACHO", "Despacho", "SALIDA", False, True),
     ("SALIDA", "GUIA_INTERNA", "Guia interna", "SALIDA", False, True),
     ("SALIDA", "CONSUMO_INTERNO", "Consumo interno", "CONSUMO", False, False),
+    ("SALIDA", "ASEO_LINEA", "Aseo / lavado de linea", "CONSUMO", False, False),
     ("SALIDA", "MERMA", "Merma", "MERMA", False, False),
     ("SALIDA", "VENCIMIENTO", "Baja por vencimiento", "VENCIMIENTO", False, False),
     ("SALIDA", "PRESTAMO", "Prestamo", "PRESTAMO", False, False),

@@ -1,5 +1,22 @@
 # Registro de cambios
 
+## [Sin publicar]
+
+### Nuevas funciones
+
+- **Proyección de insumos** (*Producción → Proyección de insumos*): a partir del historial de consumo por especie, se ingresan los kilos
+  que faltan por procesar y el sistema calcula la receta pendiente por producto, la compara con el stock disponible (descontando reservas)
+  e indica cuánto falta comprar y el costo estimado. API: `GET /api/proyeccion/historial`, `POST /api/proyeccion`.
+- **Rebaja por aseo / lavado de línea**: nuevo tipo de salida, sin proceso obligatorio, disponible en el consumo rápido.
+  El reporte de consumos muestra el tipo de rebaja.
+- **Guardar productos desde el plano**: al hacer clic en una posición o área (2D o 3D) se puede guardar una existencia en ella,
+  total o parcialmente. En la planta, al seleccionar un rack se muestra la vista frontal de sus posiciones.
+- **Capacidad máxima en envases** por ubicación (`ubicaciones.capacidad_bultos`): un área de tambores o una posición puede limitarse
+  por número de envases además de por cantidad; se define desde el panel de la ubicación. Migración inicial regenerada.
+- **Responsables del inventario físico**: se registra y muestra, con su rol, quién creó el conteo, quién contó cada existencia
+  (`detalles_conteos_inventario.contado_por`) y quién autorizó los ajustes; también en el reporte *Inventario físico*. El Demo incluye un conteo de ejemplo.
+- Los catálogos nuevos de una actualización (motivos, permisos, parámetros) se agregan solos al iniciar en instalaciones existentes.
+
 ## [1.0.0-rc1] — 2026-10-06
 
 Primera versión completa: fases 0 a 8. Pendiente de validación en el entorno real (ver [PROJECT_STATUS](PROJECT_STATUS.md)).

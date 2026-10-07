@@ -114,7 +114,15 @@ def test_inventario_fisico_completo(api, base):
     api.post(f"/conteos/{conteo['id']}/contar", {"existencia_id": c["id"], "cantidad": 1}, espera=409)
     api.post(f"/conteos/{conteo['id']}/autorizar", espera=403, como="digitador")
 
+    # Queda registrado quien hizo cada cosa, con su rol.
+    det = api.get(f"/conteos/{conteo['id']}")
+    assert (det["usuario"], det["usuario_roles"]) == ("Digitador", "Usuario / Digitador") and det["contado_por_nombres"] == ["Admin", "Digitador"]
+    por_existencia = {x["existencia_id"]: x for x in det["detalles"]}
+    assert (por_existencia[a["id"]]["contado_por_nombre"], por_existencia[a["id"]]["contado_por_roles"]) == ("Digitador", "Usuario / Digitador")
+    assert por_existencia[b["id"]]["contado_por_nombre"] == "Admin" and por_existencia[c["id"]]["contado_por_nombre"] is None
+
     final = api.post(f"/conteos/{conteo['id']}/autorizar", espera=200, como="jefe")
+    assert (final["autorizado_por_nombre"], final["autorizado_por_roles"]) == ("Jefe", "Jefe de area")
     assert final["estado"] == "AUTORIZADO" and final["ajustes_generados"] == 2
     assert api.get(f"/existencias/{b['id']}")["cantidad_fisica"] == 17.5 and api.get(f"/existencias/{fuera['id']}")["cantidad_fisica"] == 21
     assert api.get(f"/existencias/{c['id']}")["cantidad_fisica"] == 20  # no contada: no se ajusta
@@ -123,6 +131,8 @@ def test_inventario_fisico_completo(api, base):
     assert not api.get("/alertas", tipo="DIFERENCIA_INVENTARIO", abiertas=True)["items"]
     reporte = api.get("/reportes/inventario_fisico", bodega_id=bod["id"])["filas"]
     assert len(reporte) == 4 and sum(1 for f in reporte if f["ajustado"] == "SI") == 2
+    fila_a = next(f for f in reporte if f["codigo_publico"] == a["codigo_publico"])
+    assert (fila_a["contado_por"], fila_a["rol_contador"], fila_a["creado_por"], fila_a["autorizado_por"]) == ("Digitador", "Usuario / Digitador", "Digitador", "Jefe")
     invariante_libro(api)
 
     # Variante: lo no encontrado se registra en cero.
@@ -298,7 +308,7 @@ def test_plano_genera_ubicaciones_y_protege_stock(api, base):
     # Datos para el visor: ocupacion por ubicacion y contenido al hacer clic.
     ocup = api.get(f"/bodegas/{bod['id']}/ocupacion")
     assert ocup == [{"ubicacion_id": pos["id"], "existencias": 1, "cantidad": 20, "valor": 120000,
-                     "dias_antiguedad": ocup[0]["dias_antiguedad"], "dias_para_vencer": None, "ocupacion": None}]
+                     "dias_antiguedad": ocup[0]["dias_antiguedad"], "dias_para_vencer": None, "bultos": 1, "ocupacion": None}]
     assert ocup[0]["dias_antiguedad"] >= 60
     assert api.get(f"/bodegas/{bod['id']}/ocupacion", como="digitador")[0]["valor"] is None
     contenido = api.get(f"/ubicaciones/{pos['id']}/contenido")
@@ -310,3 +320,19 @@ def test_plano_genera_ubicaciones_y_protege_stock(api, base):
     assert api.get(f"/ubicaciones/{pos['id']}/contenido")["capacidad_disponible"] == 40
     assert api.get(f"/bodegas/{bod['id']}/ocupacion")[0]["ocupacion"] == pytest.approx(1 / 3)
     api.put(f"/ubicaciones/{pos['id']}", {"activo": False}, espera=409)
+
+    # Capacidad en envases: un area de piso admite un maximo de tambores, sin importar los litros.
+    piso = next(u for u in plano3["ubicaciones"] if u["codigo_completo"] == "PLA-PISO1")
+    api.put(f"/ubicaciones/{piso['id']}", {"capacidad_bultos": 4})
+    tambor = base["producto"]("PLA2", "Producto en tambor", granularidad="CONSOLIDADA")
+    api.crear("/conversiones", {"producto_id": tambor["id"], "unidad_origen_id": base["u"]["tambor"], "unidad_destino_id": base["u"]["L"], "factor": 200})
+    api.post("/documentos", {"clase": "INGRESO", "motivo_id": base["motivos"][("INGRESO", "ACTUALIZACION_STOCK")], "bodega_id": bod["id"],
+                             "confirmar": True, "detalles": [{"producto_id": tambor["id"], "cantidad": 3, "unidad_id": base["u"]["tambor"],
+                                                              "precio_unitario": 100000, "ubicacion_id": piso["id"]}]}, espera=201)
+    c = api.get(f"/ubicaciones/{piso['id']}/contenido")
+    assert (c["bultos"], c["capacidad_bultos"], c["bultos_disponibles"], c["cantidad_total"]) == (3, 4, 1, 600)
+    o = next(x for x in api.get(f"/bodegas/{bod['id']}/ocupacion") if x["ubicacion_id"] == piso["id"])
+    assert o["bultos"] == 3 and o["ocupacion"] == 0.75
+    api.put(f"/ubicaciones/{piso['id']}", {"capacidad_bultos": None})  # vacio = sin limite
+    assert api.get(f"/ubicaciones/{piso['id']}/contenido")["bultos_disponibles"] is None
+    api.put(f"/ubicaciones/{piso['id']}", {"capacidad_bultos": -1}, espera=422)

@@ -35,6 +35,10 @@ def al_iniciar() -> None:
             preparar_demo()
         elif inspect(nucleo_db.motor()).has_table("empresas"):
             migrar(url)  # aplica migraciones pendientes tras una actualizacion
+        if inspect(nucleo_db.motor()).has_table("empresas"):
+            from app.semilla.base import sembrar_base
+            with nucleo_db.nueva_sesion() as s, s.begin():
+                sembrar_base(s)  # idempotente: agrega permisos, motivos y parametros nuevos a instalaciones existentes
     except Exception:
         log.exception("No fue posible preparar la base de datos")
         return

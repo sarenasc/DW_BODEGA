@@ -56,6 +56,23 @@ export default function DetalleConteo() {
         {c.estado === "EN_REVISION" && puede("conteos:autorizar") && <Boton icono={<ShieldCheck className="size-4" />} cargando={ocupado} onClick={() => confirm(`Se generarán los ajustes de ${c.con_diferencia} existencia(s) con diferencia. ¿Autorizar?`) && ejecutar(async () => setDatos(await api.post(`/conteos/${c.id}/autorizar`)), "Ajustes generados")}>Autorizar ajustes</Boton>}
       </Encabezado>
       {c.estado === "EN_REVISION" && <Aviso tipo="alerta" className="mb-3">En revisión: el stock aún no cambia. Los ajustes se generan al autorizar{puede("conteos:autorizar") ? "." : " (requiere permiso de autorización)."}</Aviso>}
+      <div className="mb-3 grid gap-2 rounded-xl border border-slate-200 bg-white p-3 text-sm sm:grid-cols-3">
+        <div>
+          <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">Conteo creado por</p>
+          <p className="font-medium text-slate-900">{c.usuario ?? "—"}</p>
+          <p className="text-xs text-slate-500">{c.usuario_roles} · {fechaHora(c.fecha)}</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">Contado por</p>
+          <p className="font-medium text-slate-900">{c.contado_por_nombres.join(", ") || "Aún sin conteos"}</p>
+          <p className="text-xs text-slate-500">El detalle indica quién contó cada existencia</p>
+        </div>
+        <div>
+          <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">Ajustes autorizados por</p>
+          <p className="font-medium text-slate-900">{c.autorizado_por_nombre ?? "Pendiente"}</p>
+          <p className="text-xs text-slate-500">{c.autorizado_por_nombre ? `${c.autorizado_por_roles} · ${fechaHora(c.fecha_autorizacion)}` : "Requiere permiso de autorización"}</p>
+        </div>
+      </div>
       <div className="mb-3 grid grid-cols-3 gap-3">
         <Indicador titulo="Existencias" valor={c.lineas} />
         <Indicador titulo="Contadas" valor={c.contadas} tono={c.contadas === c.lineas ? "ok" : "normal"} />
@@ -85,6 +102,7 @@ export default function DetalleConteo() {
             { clave: "cantidad_contada", titulo: "Contado", alinear: "derecha", render: (x) => (x.cantidad_contada == null ? <span className="text-slate-400">Pendiente</span> : num(x.cantidad_contada)) },
             { clave: "diferencia", titulo: "Diferencia", alinear: "derecha", render: (x) => (x.diferencia == null ? "—" : <b className={cx(Number(x.diferencia) < 0 && "text-rose-700", Number(x.diferencia) > 0 && "text-amber-700")}>{Number(x.diferencia) > 0 ? "+" : ""}{num(x.diferencia)}</b>) },
             ...(costos ? [{ clave: "valor_diferencia", titulo: "Valor dif.", alinear: "derecha" as const, ocultarMovil: true, render: (x: any) => (x.valor_diferencia ? clp(x.valor_diferencia) : "—") }] : []),
+            { clave: "contado_por_nombre", titulo: "Contado por", render: (x) => (x.contado_por_nombre ? <>{x.contado_por_nombre}<span className="block text-xs text-slate-500">{x.contado_por_roles} · {fechaHora(x.contado_en)}</span></> : <span className="text-slate-400">—</span>) },
             { clave: "observacion", titulo: "Observación", ocultarMovil: true },
             { clave: "movimiento_ajuste_id", titulo: "Ajuste", render: (x) => (x.movimiento_ajuste_id ? <Estado valor="OK" /> : "") },
           ]}

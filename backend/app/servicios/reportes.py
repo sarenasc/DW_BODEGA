@@ -131,6 +131,8 @@ def movimientos(db: Session, f: Filtros, tipos: tuple[str, ...] | None = None, s
         DocumentoInventario.id.in_({m.documento_id for m in filas if m.documento_id}))).all()) if any(m.documento_id for m in filas) else {}
     anulados = set(db.scalars(select(MovimientoInventario.movimiento_anulado_id).where(
         MovimientoInventario.movimiento_anulado_id.is_not(None), MovimientoInventario.empresa_id == f.empresa_id)))
+    from app.modelos import MotivoMovimiento
+    rebajas = dict(db.execute(select(MotivoMovimiento.id, MotivoMovimiento.nombre)).all())
     salida = []
     for m in filas:
         e, p = m.existencia, procesos.get(m.proceso_id)
@@ -143,7 +145,7 @@ def movimientos(db: Session, f: Filtros, tipos: tuple[str, ...] | None = None, s
             "ubicacion": e.ubicacion.codigo_completo if e.ubicacion else None, "proceso": p.codigo if p else None,
             "especie": p.especie if p else None, "productor": p.productor if p else None,
             "documento": docs.get(m.documento_id), "usuario": usuarios.get(m.usuario_id),
-            "motivo": m.motivo_texto or m.observacion, "anulado": "SI" if m.id in anulados else "",
+            "rebaja": rebajas.get(m.motivo_id), "motivo": m.motivo_texto or m.observacion, "anulado": "SI" if m.id in anulados else "",
             "producto_id": m.producto_id, "proceso_id": m.proceso_id,
         })
     return salida
@@ -297,10 +299,15 @@ def r_inventario_fisico(db, f):
     if f.desde:
         c = c.where(ConteoInventario.fecha >= inicio_dia_utc(f.desde))
     bodegas = dict(db.execute(select(Bodega.id, Bodega.nombre)).all())
+    personas = db.scalars(select(Usuario).where(Usuario.empresa_id == f.empresa_id)).unique().all()
+    usuarios = {u.id: u.nombre for u in personas}
+    roles = {u.id: ", ".join(r.nombre for r in u.roles) for u in personas}
     salida = []
     for det, conteo in db.execute(c.order_by(ConteoInventario.id.desc(), DetalleConteoInventario.id)).unique():
         e = db.get(Existencia, det.existencia_id)
         salida.append({"conteo": conteo.numero, "fecha": conteo.fecha, "estado": conteo.estado, "bodega": bodegas.get(conteo.bodega_id),
+                       "creado_por": usuarios.get(conteo.usuario_id), "contado_por": usuarios.get(det.contado_por),
+                       "rol_contador": roles.get(det.contado_por), "autorizado_por": usuarios.get(conteo.autorizado_por),
                        "codigo_publico": e.codigo_publico, "producto": e.producto.nombre, "lote": e.lote.codigo if e.lote else None,
                        "ubicacion": e.ubicacion.codigo_completo if e.ubicacion else None, "cantidad_sistema": det.cantidad_sistema,
                        "cantidad_contada": det.cantidad_contada, "diferencia": det.diferencia, "unidad": e.unidad.codigo,
@@ -384,7 +391,8 @@ COLS_ANALISIS = [("clave", "Dimension", "texto"), ("costo", "Costo", "moneda"), 
 COLS_MOV = [("fecha", "Fecha", "fechahora"), ("tipo", "Tipo", "texto"), ("codigo_publico", "Existencia", "texto"), *C["prod"],
             ("lote", "Lote", "texto"), *C["cant"], ("costo_unitario", "Costo unitario", "moneda4"),
             ("costo_total", "Costo total", "moneda"), ("bodega", "Bodega", "texto"), ("proceso", "Proceso", "texto"),
-            ("documento", "Documento", "texto"), ("usuario", "Usuario", "texto"), ("motivo", "Motivo", "texto"),
+            ("rebaja", "Tipo de rebaja", "texto"), ("documento", "Documento", "texto"), ("usuario", "Usuario", "texto"),
+            ("motivo", "Motivo", "texto"),
             ("anulado", "Anulado", "texto")]
 COLS_EXIST = [("codigo_publico", "Existencia", "texto"), *C["prod"], *C["fam"], ("lote", "Lote", "texto"),
               ("fecha_vencimiento", "Vencimiento", "fecha"), ("bodega", "Bodega", "texto"), ("ubicacion", "Ubicacion", "texto"),
@@ -445,7 +453,8 @@ REPORTES: dict[str, Reporte] = {r.codigo: r for r in [
             ("producto", "Producto", "texto"), ("lote", "Lote", "texto"), ("ubicacion", "Ubicacion", "texto"),
             ("cantidad_sistema", "Sistema", "numero"), ("cantidad_contada", "Contado", "numero"),
             ("diferencia", "Diferencia", "numero"), ("unidad", "Unidad", "texto"), ("valor_diferencia", "Valor diferencia", "moneda"),
-            ("ajustado", "Ajustado", "texto")], r_inventario_fisico),
+            ("ajustado", "Ajustado", "texto"), ("contado_por", "Contado por", "texto"), ("rol_contador", "Rol", "texto"),
+            ("creado_por", "Conteo creado por", "texto"), ("autorizado_por", "Autorizado por", "texto")], r_inventario_fisico),
     Reporte("excepciones_fifo", "Excepciones FIFO / FEFO", [("fecha", "Fecha", "fechahora"), ("producto", "Producto", "texto"),
             ("existencia_usada", "Existencia usada", "texto"), ("lote_usado", "Lote usado", "texto"),
             ("ingreso_usado", "Ingreso", "fecha"), ("existencia_recomendada", "Recomendada", "texto"),

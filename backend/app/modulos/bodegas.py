@@ -49,6 +49,7 @@ class UbicacionEntrada(BaseModel):
     codigo: str | None = None
     nombre: str | None = None
     capacidad: Decimal | None = None
+    capacidad_bultos: int | None = Field(default=None, ge=0)
     almacenable: bool | None = None
     activo: bool | None = None
     orden: int | None = None
@@ -107,10 +108,13 @@ def editar_ubicacion(id_: int, d: UbicacionEntrada, db: Session = Depends(get_db
         raise no_encontrado("Ubicacion")
     bodega_de(db, ctx, u.bodega_id)
     antes = a_dict(u)
-    for campo in ("nombre", "capacidad", "almacenable", "tipo", "orden"):
+    for campo in ("nombre", "almacenable", "tipo", "orden"):
         v = getattr(d, campo)
         if v is not None:
             setattr(u, campo, v)
+    for campo in ("capacidad", "capacidad_bultos"):  # admiten quedar vacias (sin limite)
+        if campo in d.model_fields_set:
+            setattr(u, campo, getattr(d, campo))
     if d.activo is not None and d.activo != u.activo:
         if not d.activo and _con_stock(db, [u.id] + _descendientes(db, u.id)):
             raise ErrorNegocio("CON_STOCK", "La ubicacion (o sus posiciones) tiene stock: trasladelo antes de desactivarla.", 409)
@@ -258,20 +262,26 @@ def ocupacion(id_: int, db: Session = Depends(get_db), ctx: Contexto = Depends(r
     filas = db.execute(
         select(Existencia.ubicacion_id, func.count(Existencia.id), func.sum(Existencia.cantidad_fisica),
                func.sum(Existencia.cantidad_fisica * Existencia.costo_unitario), func.min(Existencia.fecha_ingreso),
-               func.min(Lote.fecha_vencimiento))
+               func.min(Lote.fecha_vencimiento), func.sum(func.coalesce(Existencia.envases, 1)))
         .outerjoin(Lote, Existencia.lote_id == Lote.id)
         .where(Existencia.bodega_id == id_, Existencia.cantidad_fisica > 0)
         .group_by(Existencia.ubicacion_id)).all()
-    capacidades = dict(db.execute(select(Ubicacion.id, Ubicacion.capacidad).where(Ubicacion.bodega_id == id_)).all())
+    capacidades = {i: (c, cb) for i, c, cb in db.execute(
+        select(Ubicacion.id, Ubicacion.capacidad, Ubicacion.capacidad_bultos).where(Ubicacion.bodega_id == id_))}
     hoy_ = hoy()
     salida = []
-    for uid, n, cant, valor, ingreso, vence in filas:
-        cap = capacidades.get(uid)
+    for uid, n, cant, valor, ingreso, vence, bultos in filas:
+        cap, cap_bultos = capacidades.get(uid, (None, None))
+        # La ocupacion se mide en envases si la ubicacion define un maximo de envases; si no, en cantidad.
+        if cap_bultos:
+            llenado = float(min(Decimal(1), Decimal(int(bultos or 0)) / cap_bultos))
+        else:
+            llenado = float(min(Decimal(1), (cant or 0) / cap)) if cap else None
         salida.append({
             "ubicacion_id": uid, "existencias": n, "cantidad": float(cant or 0), "valor": float(valor or 0),
             "dias_antiguedad": (hoy_ - dia_local(ingreso)).days if ingreso else None,
             "dias_para_vencer": (vence - hoy_).days if vence else None,
-            "ocupacion": float(min(Decimal(1), (cant or 0) / cap)) if cap else None})
+            "bultos": int(bultos or 0), "ocupacion": llenado})
     return ocultar_costos(salida, ctx.ver_costos)
 
 
@@ -290,9 +300,12 @@ def contenido(id_: int, db: Session = Depends(get_db), ctx: Contexto = Depends(r
         "fecha_ingreso": e.fecha_ingreso.isoformat() + "Z",
         "fecha_vencimiento": e.lote.fecha_vencimiento.isoformat() if e.lote and e.lote.fecha_vencimiento else None,
         "valor": float(e.cantidad_fisica * e.costo_unitario),
-        "ubicacion": e.ubicacion.codigo_completo if e.ubicacion else None} for e in existencias]
+        "envases": e.envases or 1, "ubicacion": e.ubicacion.codigo_completo if e.ubicacion else None} for e in existencias]
+    bultos = sum(i["envases"] for i in items)
     total = sum(Decimal(str(i["cantidad"])) for i in items)
     return ocultar_costos({
         "ubicacion": a_dict(u), "existencias": items, "cantidad_total": float(total),
         "valor": sum(i["valor"] for i in items),
-        "capacidad_disponible": float(u.capacidad - total) if u.capacidad is not None else None}, ctx.ver_costos)
+        "capacidad_disponible": float(u.capacidad - total) if u.capacidad is not None else None,
+        "bultos": bultos, "capacidad_bultos": u.capacidad_bultos,
+        "bultos_disponibles": (u.capacidad_bultos - bultos) if u.capacidad_bultos is not None else None}, ctx.ver_costos)

@@ -180,7 +180,9 @@ class Ubicacion(Base, ConId, ConFechas):
     codigo: Mapped[str] = mapped_column(String(20))
     codigo_completo: Mapped[str] = mapped_column(String(80), index=True)
     nombre: Mapped[str | None] = mapped_column(String(100))
-    capacidad: Mapped[Decimal | None] = mapped_column(Cantidad)
+    capacidad: Mapped[Decimal | None] = mapped_column(Cantidad)  # en cantidad (suma en unidad base de lo almacenado)
+    # Maximo de envases que caben (tambores, bidones, pallets), sin importar su contenido.
+    capacidad_bultos: Mapped[int | None] = mapped_column(Integer)
     almacenable: Mapped[bool] = mapped_column(Boolean, default=True)
     activo: Mapped[bool] = mapped_column(Boolean, default=True)
 

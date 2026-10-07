@@ -1,7 +1,7 @@
 "use client";
 
 import {
-  ArrowLeftRight, Bell, Boxes, Building2, ClipboardCheck, ClipboardList, Cog, Factory, FileBarChart, FileText, GitBranch, HandCoins, Handshake,
+  ArrowLeftRight, Bell, Boxes, Building2, Calculator, ClipboardCheck, ClipboardList, Cog, Factory, FileBarChart, FileText, GitBranch, HandCoins, Handshake,
   History, LayoutDashboard, Layers, LogOut, Menu, PackagePlus, PackageSearch, Plug, QrCode, Ruler, ScanLine, Search, ShieldCheck, Tags, Truck, Users, Warehouse, X,
 } from "lucide-react";
 import Link from "next/link";
@@ -37,6 +37,7 @@ const MENU: { titulo: string; items: Item[] }[] = [
     items: [
       { href: "/procesos/", texto: "Procesos", icono: Factory, permiso: "procesos:ver" },
       { href: "/costos/", texto: "Costos", icono: HandCoins, permiso: "costos:ver" },
+      { href: "/proyeccion/", texto: "Proyección de insumos", icono: Calculator, permiso: "procesos:ver" },
       { href: "/trazabilidad/", texto: "Trazabilidad", icono: GitBranch, permiso: "trazabilidad:ver" },
     ],
   },

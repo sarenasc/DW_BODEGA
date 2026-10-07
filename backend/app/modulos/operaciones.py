@@ -33,12 +33,22 @@ class ConteoEntrada(BaseModel):
     observaciones: str | None = None
 
 
+def _persona(db: Session, usuario_id: int | None) -> tuple[str | None, str | None]:
+    """Nombre y roles del usuario: permite distinguir si actuo control de gestion, el bodeguero u otro."""
+    u = db.get(Usuario, usuario_id) if usuario_id else None
+    return (u.nombre, ", ".join(r.nombre for r in u.roles) or None) if u else (None, None)
+
+
 def _conteo(db: Session, c: ConteoInventario, detalle: bool = False) -> dict:
     contadas = [d for d in c.detalles if d.cantidad_contada is not None]
     con_dif = [d for d in contadas if d.diferencia]
+    creador, rol_creador = _persona(db, c.usuario_id)
+    autoriza, rol_autoriza = _persona(db, c.autorizado_por)
+    contadores = sorted({n for n in (_persona(db, x.contado_por)[0] for x in contadas) if n})
     d = a_dict(c, bodega=db.get(Bodega, c.bodega_id).nombre,
                ubicacion=db.get(Ubicacion, c.ubicacion_id).codigo_completo if c.ubicacion_id else None,
-               usuario=db.get(Usuario, c.usuario_id).nombre if c.usuario_id else None,
+               usuario=creador, usuario_roles=rol_creador, autorizado_por_nombre=autoriza, autorizado_por_roles=rol_autoriza,
+               contado_por_nombres=contadores,
                lineas=len(c.detalles), contadas=len(contadas), con_diferencia=len(con_dif))
     if detalle:
         filas = []
@@ -47,6 +57,7 @@ def _conteo(db: Session, c: ConteoInventario, detalle: bool = False) -> dict:
             filas.append(a_dict(x, codigo_publico=e.codigo_publico, producto=e.producto.nombre, unidad=e.unidad.codigo,
                                 lote=e.lote.codigo if e.lote else None,
                                 ubicacion=e.ubicacion.codigo_completo if e.ubicacion else None,
+                                contado_por_nombre=_persona(db, x.contado_por)[0], contado_por_roles=_persona(db, x.contado_por)[1],
                                 valor_diferencia=(x.diferencia * e.costo_unitario) if x.diferencia is not None else None))
         d["detalles"] = filas
     return d
@@ -124,7 +135,7 @@ def contar(id_: int, d: LineaConteo, db: Session = Depends(get_db), ctx: Context
     linea.cantidad_sistema = e.cantidad_fisica  # se compara contra el saldo vigente al momento de contar
     linea.cantidad_contada = q6(d.cantidad)
     linea.diferencia = linea.cantidad_contada - linea.cantidad_sistema
-    linea.contado_en = ahora()
+    linea.contado_en, linea.contado_por = ahora(), ctx.usuario.id
     linea.observacion = d.observacion or ("Encontrada fuera de su ubicacion registrada" if fuera_de_lugar else linea.observacion)
     db.flush()
     return ocultar_costos({"linea": a_dict(linea, codigo_publico=e.codigo_publico, producto=e.producto.nombre, unidad=e.unidad.codigo,
@@ -143,6 +154,7 @@ def cerrar_conteo(id_: int, no_contadas_en_cero: bool = False, db: Session = Dep
         for x in c.detalles:
             if x.cantidad_contada is None:
                 x.cantidad_contada, x.diferencia, x.contado_en = CERO, -x.cantidad_sistema, ahora()
+                x.contado_por = ctx.usuario.id
                 x.observacion = "No encontrada"
     c.estado = "EN_REVISION"
     difs = [x for x in c.detalles if x.diferencia]

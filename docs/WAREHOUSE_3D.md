@@ -51,6 +51,34 @@ las áreas de piso muestran un bulto por existencia.
 **Clic en una posición, rack o área** → panel con productos, lotes, cantidad, fecha de ingreso, vencimiento, valor del inventario
 y capacidad disponible, con enlace a cada existencia. La planta 2D ofrece la misma consulta y los mismos modos de color.
 
+## Guardar productos desde el plano
+
+1. Haga clic en una posición (vista 3D) o en un rack de la planta: aparece **Posiciones de R04**, una vista frontal con una casilla por nivel y posición.
+2. Clic en la casilla → panel de la ubicación → **Guardar producto aquí**.
+3. Elija la existencia (búsqueda por código, producto o lote; se sugieren las que están en la bodega sin ubicación) y la cantidad.
+4. **Guardar**: queda registrado como traslado. Si la cantidad es parcial nace una existencia nueva con su propio QR; si viene de otra bodega es un traslado entre bodegas.
+
+Requiere el permiso `traslados:crear`. Los racks, niveles y pasillos no almacenan: hay que elegir una posición o un área de piso.
+Si la cantidad supera la capacidad libre se advierte, pero no se impide. La posición cambia de color al instante.
+Lo mismo está disponible en *Ubicaciones*, al hacer clic en una fila.
+
+## Capacidad máxima de una ubicación
+
+En el panel de cualquier posición o área: **Definir / Cambiar capacidad máxima** (permiso `bodegas:administrar`).
+
+| Capacidad | Qué limita | Ejemplo |
+|---|---|---|
+| **Máximo de envases** (`capacidad_bultos`) | Número de tambores, bidones o pallets, sin importar su contenido | Área de tambores: 12 |
+| Máximo en cantidad (`capacidad`) | Suma de lo almacenado en su unidad principal | Posición de rack: 400 L |
+
+- Cada existencia cuenta los envases que agrupa (un ingreso consolidado de 3 tambores cuenta 3; una existencia por envase cuenta 1).
+  Un tambor a medio consumir sigue ocupando su lugar.
+- El panel muestra `5 / 12` y cuántos caben; la ocupación (color) se calcula con los envases si hay máximo de envases, y si no con la cantidad.
+- Al guardar un producto que no cabe **se advierte, pero no se bloquea**.
+- En la vista 3D las áreas de piso dibujan un bulto por envase almacenado.
+
+En el Demo, el área *TAMBORES* admite 12.
+
 El buscador general lleva a una ubicación (`FIT-R01-N02`) y abre su contenido en el plano.
 
 ## Tecnología y límites

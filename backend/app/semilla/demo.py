@@ -205,6 +205,7 @@ def sembrar_demo(db: Session, emp: Empresa) -> None:
     area(b_man, "PISO", "LUBRICANTES", 9, 1, 5, 3.5, "#38bdf8")
     area(b_man, "ZONA", "HERRAMIENTAS", 9, 5.5, 5, 3.5, "#a78bfa")
     db.flush()
+    db.scalar(select(Ubicacion).where(Ubicacion.codigo_completo == "FIT-TAMBORES")).capacidad_bultos = 12
     ubic = {x.codigo_completo: x.id for x in db.scalars(select(Ubicacion).where(Ubicacion.bodega_id.in_([b_fit.id, b_man.id])))}
     n_factura = [3400]
 
@@ -352,6 +353,17 @@ def sembrar_demo(db: Session, emp: Empresa) -> None:
         db.add(pr)
     inv.registrar_salida(db, ctx, ex["co2"][1], Decimal("3.5"), "MERMA", evaluar_fifo=False, motivo_id=motivos[("SALIDA", "MERMA")].id,
                          motivo_texto="Saco roto en descarga", fecha=ahora_ - timedelta(days=13))
+    db.flush()
+
+    # ---- inventario fisico: lo crea y cuenta la bodeguera, una linea la cuenta control de gestion (admin) y autoriza el jefe
+    from app.modulos.operaciones import ConteoEntrada, LineaConteo, autorizar_conteo, cerrar_conteo, contar, crear_conteo
+    ctx_jefe = Contexto(usuarios.get("jefe", admin), admin.permisos, "127.0.0.1", "Carga de datos demo")
+    conteo = crear_conteo(ConteoEntrada(bodega_id=b_man.id, ubicacion_id=ubic["MAN-LUBRICANTES"], observaciones="Conteo mensual de lubricantes"),
+                          db, ctx_bodega)
+    contar(conteo["id"], LineaConteo(existencia_id=ex["l1"][0].id, cantidad=Decimal("23.5"), observacion="Envase abierto con merma"), db, ctx_bodega)
+    contar(conteo["id"], LineaConteo(existencia_id=ex["l2"][0].id, cantidad=Decimal(50)), db, ctx)
+    cerrar_conteo(conteo["id"], False, db, ctx_bodega)
+    autorizar_conteo(conteo["id"], db, ctx_jefe)
     db.flush()
     evaluar_reglas(db, emp.id)
 

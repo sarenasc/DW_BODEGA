@@ -222,6 +222,7 @@ class DetalleConteoInventario(Base, ConId):
     movimiento_ajuste_id: Mapped[int | None] = mapped_column(ForeignKey("movimientos_inventario.id"))
     observacion: Mapped[str | None] = mapped_column(String(300))
     contado_en: Mapped[datetime | None] = mapped_column(DateTime)
+    contado_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id"))  # quien conto esta existencia
 
 
 class Prestamo(Base, ConId, ConFechas):
